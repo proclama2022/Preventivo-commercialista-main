@@ -6,7 +6,7 @@ from genera_preventivo import genera_preventivo
 
 # Inizializza le variabili di sessione
 if 'openai_api_key' not in st.session_state:
-    st.session_state.openai_api_key = st.secrets["openai"]["api_key"]
+    st.session_state.openai_api_key = ""  # Inizializza con una stringa vuota
 if 'step' not in st.session_state:
     st.session_state.step = 0
 if 'cliente_info' not in st.session_state:
