@@ -32,10 +32,9 @@ def split_text(text, chunk_size=4000, chunk_overlap=200):
     )
     return text_splitter.split_text(text)
 
-def extract_info(text):
-    api_key = os.getenv("OPENAI_API_KEY")
+def extract_info(text, api_key):
     if not api_key:
-        raise ValueError("La chiave API di OpenAI non è stata trovata nell'ambiente.")
+        raise ValueError("La chiave API di OpenAI non è stata fornita.")
     
     llm = ChatOpenAI(
         temperature=0,

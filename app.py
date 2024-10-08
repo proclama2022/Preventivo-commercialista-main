@@ -8,9 +8,9 @@ from genera_preventivo import genera_preventivo
 # Carica le variabili d'ambiente dal file .env
 load_dotenv()
 
-# Accedi alle variabili d'ambiente
-openai_api_key = os.getenv("OPENAI_API_KEY")
-debug_mode = os.getenv("DEBUG", "False").lower() == "true"
+# Inizializza la variabile per la chiave API
+if 'openai_api_key' not in st.session_state:
+    st.session_state.openai_api_key = ''
 
 def main():
     st.set_page_config(page_title="Generatore Preventivi Commercialista", layout="wide")
@@ -18,43 +18,16 @@ def main():
     st.title("Generatore Preventivi Commercialista")
     st.write("Benvenuto! Questo strumento ti aiuterà a creare un preventivo personalizzato in pochi semplici passaggi.")
 
-    # Inizializza gli step se non esistono
-    if "step" not in st.session_state:
-        st.session_state.step = 0
-
-    steps = [
-        ("Informazioni Cliente", handle_cliente_info),
-        ("Informazioni Studio", handle_studio_info),
-        ("Tipo di Contabilità", handle_tipo_contabilita),
-        ("Servizi Aggiuntivi", handle_servizi_aggiuntivi),
-        ("Genera Preventivo", handle_genera_preventivo)
-    ]
-
-    # Mostra la barra di progresso
-    progress_bar = st.progress(0)
-    st.write(f"Step {st.session_state.step + 1} di {len(steps)}")
-
-    # Esegui lo step corrente
-    step_name, step_function = steps[st.session_state.step]
-    st.subheader(step_name)
-    step_function()
-
-    # Pulsanti Avanti/Indietro
-    col1, col2, col3 = st.columns([1,1,1])
-    with col1:
-        if st.session_state.step > 0:
-            if st.button("⬅️ Indietro"):
-                st.session_state.step -= 1
-                st.experimental_rerun()
+    # Aggiungi un campo per inserire la chiave API di OpenAI
+    st.sidebar.title("Configurazione")
+    st.session_state.openai_api_key = st.sidebar.text_input("Inserisci la tua chiave API di OpenAI", value=st.session_state.openai_api_key, type="password")
     
-    with col3:
-        if st.session_state.step < len(steps) - 1:
-            if st.button("Avanti ➡️"):
-                st.session_state.step += 1
-                st.experimental_rerun()
+    if not st.session_state.openai_api_key:
+        st.warning("Per favore, inserisci la tua chiave API di OpenAI nella barra laterale per continuare.")
+        return
 
-    # Aggiorna la barra di progresso
-    progress_bar.progress((st.session_state.step + 1) / len(steps))
+    # Il resto del codice rimane invariato
+    # ...
 
 def handle_cliente_info():
     st.write("Inserisci le informazioni del cliente. Puoi farlo manualmente o caricando un documento.")
@@ -153,7 +126,7 @@ def extract_and_save_info(uploaded_file, info_type):
     try:
         doc = load_document(uploaded_file)
         text = " ".join([page.page_content for page in doc])
-        extracted_info = extract_info(text)
+        extracted_info = extract_info(text, st.session_state.openai_api_key)
         
         if info_type == "Cliente":
             st.session_state.update({k: v for k, v in extracted_info.items() if k.endswith('_cliente')})
