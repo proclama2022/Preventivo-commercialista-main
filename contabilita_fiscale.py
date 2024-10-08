@@ -296,23 +296,73 @@ def calcola_preventivo_ordinario():
     else:
         costo_dichiarazione_redditi = 0
 
+    # Bilanci
+    st.write("Bilanci:")
+    fasce_bilanci = {
+        "Fino a 130.000,00 Euro": (352, 555),
+        "da 130.000,01 a 500.000,00 Euro": (555, 976),
+        "Da 500.000,01 a 1.300.000,00 Euro": (976, 1392),
+        "Da 1.300.000,01 a 2.600.000,00 Euro": (1392, 2087),
+        "da 2.600.000,01 a 5.750.000,00 Euro": (2087, 2783),
+        "Oltre": ("a discrezione", "a discrezione")
+    }
+    st.table(pd.DataFrame(fasce_bilanci, index=["Minimo", "Massimo"]).T)
+    
+    include_bilancio = st.checkbox("Includere Bilancio?")
+    if include_bilancio:
+        fascia_bilancio = st.selectbox("Seleziona la fascia di attività-perdite", list(fasce_bilanci.keys()))
+        min_bilancio, max_bilancio = fasce_bilanci[fascia_bilancio]
+        if fascia_bilancio != "Oltre":
+            costo_bilancio = st.slider("Costo Bilancio", min_value=float(min_bilancio), max_value=float(max_bilancio), value=float(min_bilancio), step=1.0)
+        else:
+            costo_bilancio = st.number_input("Inserisci il costo per il Bilancio", min_value=0.0, step=100.0)
+        st.write(f"Costo Bilancio: €{costo_bilancio:.2f}")
+    else:
+        costo_bilancio = 0
+
+    # Componenti positivi di reddito
+    st.write("Componenti positivi di reddito:")
+    fasce_componenti_positivi = {
+        "Fino a 150.000,00 Euro": (352, 696),
+        "Fino a 300.000,00 Euro": (415, 765),
+        "da 300.000,01 a 500.000,00 Euro": (565, 976),
+        "da 500.000,01 a 1.500.000,00 Euro": (696, 1114),
+        "da 1.500.000,01 a 3.000.000,00 Euro": (1044, 1392),
+        "da 3.000.000,01 a 5.000.000,00 Euro": (1392, 2087),
+        "da 5.000.000,01 a 7.500.000,00 Euro": (2087, 2783),
+        "Oltre": ("a discrezione", "a discrezione")
+    }
+    st.table(pd.DataFrame(fasce_componenti_positivi, index=["Minimo", "Massimo"]).T)
+    
+    include_componenti_positivi = st.checkbox("Includere calcolo componenti positivi di reddito?")
+    if include_componenti_positivi:
+        fascia_componenti_positivi = st.selectbox("Seleziona la fascia di componenti positivi di reddito", list(fasce_componenti_positivi.keys()))
+        min_componenti_positivi, max_componenti_positivi = fasce_componenti_positivi[fascia_componenti_positivi]
+        if fascia_componenti_positivi != "Oltre":
+            costo_componenti_positivi = st.slider("Costo calcolo componenti positivi", min_value=float(min_componenti_positivi), max_value=float(max_componenti_positivi), value=float(min_componenti_positivi), step=1.0)
+        else:
+            costo_componenti_positivi = st.number_input("Inserisci il costo per il calcolo dei componenti positivi", min_value=0.0, step=100.0)
+        st.write(f"Costo calcolo componenti positivi: €{costo_componenti_positivi:.2f}")
+    else:
+        costo_componenti_positivi = 0
+
     # Altri servizi
     altri_servizi = {
-        "Redazione mod. Unico di persone fisiche senza partita IVA": 120,
-        "Redazione mod. 730": 110,
-        "Comunicazione opzione IRAP": 70,
-        "Calcolo deduzione per capitale investito proprio (ACE)": (120, 600)
+        "Predisposizione per l'invio telematico dei bilanci delle società di capitali": 350,
+        "Adempimenti connessi alla nomina o al rinnovo dell'organo amministrativo delle società di capitali": 420
     }
     
     st.write("Altri servizi disponibili:")
     for servizio, costo in altri_servizi.items():
-        if isinstance(costo, tuple):
-            st.write(f"- {servizio}: minimo €{costo[0]}, massimo €{costo[1]}")
-        else:
+        if st.checkbox(f"{servizio} (€{costo})"):
             st.write(f"- {servizio}: €{costo}")
+        else:
+            altri_servizi[servizio] = 0
 
     # Calcolo del totale
-    totale = onorario_base + costo_liquidazioni + costo_dichiarazione_iva + costo_dichiarazione_redditi
+    totale = (onorario_base + costo_liquidazioni + costo_dichiarazione_iva + 
+              costo_dichiarazione_redditi + costo_bilancio + costo_componenti_positivi +
+              sum(altri_servizi.values()))
 
     # Riepilogo
     st.subheader("Riepilogo Preventivo")
@@ -323,6 +373,13 @@ def calcola_preventivo_ordinario():
         st.write(f"Dichiarazione IVA: €{costo_dichiarazione_iva:.2f}")
     if include_dichiarazione_redditi:
         st.write(f"Dichiarazione dei redditi: €{costo_dichiarazione_redditi:.2f}")
+    if include_bilancio:
+        st.write(f"Bilancio: €{costo_bilancio:.2f}")
+    if include_componenti_positivi:
+        st.write(f"Calcolo componenti positivi: €{costo_componenti_positivi:.2f}")
+    for servizio, costo in altri_servizi.items():
+        if costo > 0:
+            st.write(f"{servizio}: €{costo:.2f}")
     st.write(f"**Totale preventivo: €{totale:.2f}**")
 
     # Modifica manuale dei valori
@@ -331,8 +388,13 @@ def calcola_preventivo_ordinario():
     costo_liquidazioni_manuale = st.number_input("Costo liquidazioni IVA", value=float(costo_liquidazioni), step=1.0)
     costo_dichiarazione_iva_manuale = st.number_input("Costo Dichiarazione IVA", value=float(costo_dichiarazione_iva), step=1.0)
     costo_dichiarazione_redditi_manuale = st.number_input("Costo Dichiarazione dei redditi", value=float(costo_dichiarazione_redditi), step=1.0)
+    costo_bilancio_manuale = st.number_input("Costo Bilancio", value=float(costo_bilancio), step=1.0)
+    costo_componenti_positivi_manuale = st.number_input("Costo calcolo componenti positivi", value=float(costo_componenti_positivi), step=1.0)
 
-    totale_manuale = onorario_base_manuale + costo_liquidazioni_manuale + costo_dichiarazione_iva_manuale + costo_dichiarazione_redditi_manuale
+    totale_manuale = (onorario_base_manuale + costo_liquidazioni_manuale + 
+                      costo_dichiarazione_iva_manuale + costo_dichiarazione_redditi_manuale + 
+                      costo_bilancio_manuale + costo_componenti_positivi_manuale +
+                      sum(altri_servizi.values()))
     st.write(f"**Totale preventivo (modificato manualmente): €{totale_manuale:.2f}**")
 
     return {
@@ -341,6 +403,9 @@ def calcola_preventivo_ordinario():
             "Onorario base": onorario_base_manuale,
             "Liquidazioni IVA": costo_liquidazioni_manuale,
             "Dichiarazione IVA": costo_dichiarazione_iva_manuale,
-            "Dichiarazione dei redditi": costo_dichiarazione_redditi_manuale
+            "Dichiarazione dei redditi": costo_dichiarazione_redditi_manuale,
+            "Bilancio": costo_bilancio_manuale,
+            "Calcolo componenti positivi": costo_componenti_positivi_manuale,
+            **{k: v for k, v in altri_servizi.items() if v > 0}
         }
     }
