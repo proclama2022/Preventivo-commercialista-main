@@ -10,6 +10,10 @@ from datetime import datetime
 def genera_preventivo(cliente_info, studio_info, tipo_contabilita, servizi):
     doc = Document()
     
+    # Debug: Stampa la struttura dei servizi
+    print("Struttura dei servizi:")
+    print(servizi)
+    
     # Aggiungi intestazione
     doc.add_heading('Preventivo', 0)
     
@@ -39,6 +43,7 @@ def genera_preventivo(cliente_info, studio_info, tipo_contabilita, servizi):
     hdr_cells[2].text = 'Prezzo'
 
     # Aggiungi i servizi alla tabella
+<<<<<<< HEAD
     for servizio, costo in servizi.get('Servizi Aggiuntivi', {}).items():
         if costo > 0:
             row_cells = table.add_row().cells
@@ -48,6 +53,24 @@ def genera_preventivo(cliente_info, studio_info, tipo_contabilita, servizi):
 
     # Aggiungi il totale alla tabella
     totale = servizi.get('Totale', 0)
+=======
+    if isinstance(servizi, dict):
+        for servizio, costo in servizi.get('Servizi Aggiuntivi', {}).items():
+            if isinstance(costo, (int, float)) and costo > 0:
+                row_cells = table.add_row().cells
+                row_cells[0].text = servizio
+                row_cells[1].text = "1"
+                row_cells[2].text = f"€ {costo:.2f}"
+    else:
+        # Se servizi non è un dizionario, aggiungi una riga di errore
+        row_cells = table.add_row().cells
+        row_cells[0].text = "Errore: Dati dei servizi non validi"
+        row_cells[1].text = ""
+        row_cells[2].text = ""
+
+    # Aggiungi il totale alla tabella
+    totale = servizi.get('Totale', 0) if isinstance(servizi, dict) else 0
+>>>>>>> f3c22f8 (Aggiornata la funzione genera_preventivo)
     row_cells = table.add_row().cells
     row_cells[0].text = "Totale"
     row_cells[1].text = ""
