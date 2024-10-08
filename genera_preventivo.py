@@ -43,17 +43,6 @@ def genera_preventivo(cliente_info, studio_info, tipo_contabilita, servizi):
     hdr_cells[2].text = 'Prezzo'
 
     # Aggiungi i servizi alla tabella
-<<<<<<< HEAD
-    for servizio, costo in servizi.get('Servizi Aggiuntivi', {}).items():
-        if costo > 0:
-            row_cells = table.add_row().cells
-            row_cells[0].text = servizio
-            row_cells[1].text = "1"
-            row_cells[2].text = f"€ {costo:.2f}"
-
-    # Aggiungi il totale alla tabella
-    totale = servizi.get('Totale', 0)
-=======
     if isinstance(servizi, dict):
         for servizio, costo in servizi.get('Servizi Aggiuntivi', {}).items():
             if isinstance(costo, (int, float)) and costo > 0:
@@ -70,7 +59,6 @@ def genera_preventivo(cliente_info, studio_info, tipo_contabilita, servizi):
 
     # Aggiungi il totale alla tabella
     totale = servizi.get('Totale', 0) if isinstance(servizi, dict) else 0
->>>>>>> f3c22f8 (Aggiornata la funzione genera_preventivo)
     row_cells = table.add_row().cells
     row_cells[0].text = "Totale"
     row_cells[1].text = ""
