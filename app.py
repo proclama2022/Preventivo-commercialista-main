@@ -73,7 +73,7 @@ def main():
 
     # Verifica che il file delle tariffe ANC esista
     if not os.path.exists(st.session_state.pdf_path):
-        st.error(f"Il file delle tariffe ANC non è stato trovato nel percorso: {st.session_state.pdf_path}")
+        st.error(f"Il file delle tariffe ANC non �� stato trovato nel percorso: {st.session_state.pdf_path}")
         return
 
     # Procedi con i passaggi dell'applicazione
@@ -202,7 +202,14 @@ def handle_genera_preventivo():
             st.info("🚧 La funzionalità di chat assistente non è disponibile al momento. Stiamo lavorando per risolvere il problema. 🚧")
         else:
             # Il codice per eseguire la chat assistente
-            # ... (il resto del codice per la chat rimane invariato)
+            context = {
+                "cliente_info": st.session_state.cliente_info,
+                "studio_info": st.session_state.studio_info,
+                "tipo_contabilita": st.session_state.tipo_contabilita,
+                "servizi_aggiuntivi": st.session_state.servizi_aggiuntivi.get('Servizi Aggiuntivi', {}),
+                "totale": st.session_state.servizi_aggiuntivi.get('Totale', 0)
+            }
+            run_chat_assistant(st.session_state.pdf_path, st.session_state.openai_api_key, context)
 
     st.info("Nelle prossime settimane verranno implementati altri servizi e funzionalità aggiuntive.")
 
