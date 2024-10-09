@@ -17,13 +17,10 @@ def calcola_preventivo_forfettario():
     fatture_mensili = st.radio("Numero di fatture mensili", ["Fino a 10/mese", "Oltre 10/mese"])
     if fatture_mensili == "Fino a 10/mese":
         onorario_min, onorario_max = 500, 1200
-        fatturato_min, fatturato_max = 5000, 12000  # Range di fatturato
     else:
         onorario_min, onorario_max = 750, 1500
-        fatturato_min, fatturato_max = 7500, 15000  # Range di fatturato
 
     st.write(f"Range di onorario: €{onorario_min:.2f} - €{onorario_max:.2f}")
-    st.write(f"Range di fatturato: €{fatturato_min:.2f} - €{fatturato_max:.2f}")
     st.write("Questo range è basato sul numero di fatture mensili.")
 
     onorario_annuale = st.slider("Onorario annuale", 
@@ -37,7 +34,6 @@ def calcola_preventivo_forfettario():
     servizi_aggiuntivi = {
         "Maggiorazione annua recupero corrispettivi telematici": 300,
         "Redazione situazione contabile periodica/infrannuale": 75,
-        "Dichiarazione dei redditi": 292
     }
 
     servizi_selezionati = {}
