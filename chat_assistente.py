@@ -1,4 +1,10 @@
-import chromadb
+import streamlit as st
+
+try:
+    import chromadb
+except ImportError:
+    st.error("La libreria chromadb non è installata. Alcune funzionalità potrebbero non essere disponibili.")
+
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_openai import ChatOpenAI
@@ -6,7 +12,6 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.schema import Document
 from langchain.memory import ConversationBufferMemory
-import streamlit as st
 
 MAX_MESSAGES = 5  # Numero massimo di messaggi da visualizzare
 
