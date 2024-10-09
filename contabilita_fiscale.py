@@ -66,34 +66,31 @@ def calcola_preventivo_semplificato():
     # Visualizzazione delle tariffe
     st.write("Tariffe per la contabilità semplificata:")
     tariffe = {
-        "Fino a 600 registrazioni": ("€ 2.132,00", "€ 3.110,00"),
-        "Da 601 a 2000 registrazioni": ("€ 2,20 a registrazione", "€ 3,20 a registrazione"),
-        "Oltre 2000 registrazioni": ("€ 1,92 a registrazione", "€ 2,80 a registrazione")
+        "Fino a 90": ("€ 1.163,00", "€ 1.679,00"),
+        "fino a 180": ("€ 1.560,00", "€ 2.061,00"),
+        "da 180 e fino a 360": ("€ 2.238,00", "€ 3.372,00"),
+        "ogni registrazione oltre le 360": ("€ 1,65", "€ 2,35")
     }
     df_tariffe = pd.DataFrame(tariffe, index=["Minimo", "Massimo"]).T
     st.table(df_tariffe)
-    st.write("Nota: Per oltre 2000 registrazioni, si applica la tariffa indicata solo alle registrazioni eccedenti.")
+    st.write("Nota: Per oltre 360 registrazioni, si applica la tariffa indicata per ogni registrazione aggiuntiva.")
 
     # Input per il numero di registrazioni
-    num_registrazioni = st.number_input("Numero di registrazioni annue", min_value=1, value=100)
+    num_registrazioni = st.number_input("Numero di fatture o rilevazioni annue", min_value=1, value=90)
     
-    # Calcolo dell'onorario base e del range di fatturato
-    if num_registrazioni <= 600:
-        onorario_min, onorario_max = 2132, 3110
-        fatturato_min, fatturato_max = 0, 400000  # Range di fatturato per contabilità semplificata
-    elif num_registrazioni <= 2000:
-        onorario_min = 2.20 * num_registrazioni
-        onorario_max = 3.20 * num_registrazioni
-        fatturato_min, fatturato_max = 0, 700000  # Range di fatturato per contabilità semplificata
+    # Calcolo dell'onorario base
+    if num_registrazioni <= 90:
+        onorario_min, onorario_max = 1163, 1679
+    elif num_registrazioni <= 180:
+        onorario_min, onorario_max = 1560, 2061
+    elif num_registrazioni <= 360:
+        onorario_min, onorario_max = 2238, 3372
     else:
-        onorario_min = 1920 + (num_registrazioni - 2000) * 1.92
-        onorario_max = 2800 + (num_registrazioni - 2000) * 2.80
-        fatturato_min, fatturato_max = 0, 700000  # Range di fatturato per contabilità semplificata
-
+        onorario_min = 2238 + (num_registrazioni - 360) * 1.65
+        onorario_max = 3372 + (num_registrazioni - 360) * 2.35
+    
     st.write(f"Range di onorario calcolato: €{onorario_min:.2f} - €{onorario_max:.2f}")
-    st.write(f"Range di fatturato per contabilità semplificata: €{fatturato_min:,.2f} - €{fatturato_max:,.2f}")
-    st.write("Questo range di onorario è calcolato in base al numero di registrazioni e alle tariffe sopra indicate.")
-    st.write("Il range di fatturato è basato sui limiti previsti per la contabilità semplificata.")
+    st.write("Questo range è calcolato in base al numero di fatture o rilevazioni annue e alle tariffe sopra indicate.")
 
     onorario_annuale = st.slider("Onorario annuale", 
                                  min_value=float(onorario_min), 
