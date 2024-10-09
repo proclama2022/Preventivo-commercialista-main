@@ -1,12 +1,6 @@
 import streamlit as st
-
-try:
-    import chromadb
-except ImportError:
-    st.error("La libreria chromadb non è installata. Alcune funzionalità potrebbero non essere disponibili.")
-
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain_community.document_loaders import PyPDFLoader
@@ -15,7 +9,7 @@ from langchain.memory import ConversationBufferMemory
 
 MAX_MESSAGES = 5  # Numero massimo di messaggi da visualizzare
 
-def setup_chroma(pdf_path, openai_api_key, context):
+def setup_faiss(pdf_path, openai_api_key, context):
     # Carica il PDF delle tariffe ANC
     loader = PyPDFLoader(pdf_path)
     documents = loader.load()
@@ -41,8 +35,8 @@ def setup_chroma(pdf_path, openai_api_key, context):
     # Inizializza l'embedding model
     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 
-    # Crea il database vettoriale Chroma
-    vectordb = Chroma.from_documents(documents, embeddings)
+    # Crea il database vettoriale FAISS
+    vectordb = FAISS.from_documents(documents, embeddings)
 
     return vectordb
 
@@ -143,7 +137,7 @@ def run_chat_assistant(pdf_path, openai_api_key, context):
         return
     
     try:
-        vectordb = setup_chroma(pdf_path, openai_api_key, context)
+        vectordb = setup_faiss(pdf_path, openai_api_key, context)
         chain = create_chat_chain(vectordb, openai_api_key)
         chat_interface(chain, context, vectordb)
     except Exception as e:
