@@ -106,28 +106,40 @@ def calcola_preventivo_semplificato():
     
     # Liquidazioni IVA
     st.write("Liquidazioni IVA:")
-    st.write("Costo per singola liquidazione: €48")
     include_liquidazioni_iva = st.checkbox("Includere liquidazioni IVA?")
     if include_liquidazioni_iva:
         periodicita_iva = st.radio("Periodicità IVA", ["Mensile", "Trimestrale"])
         if periodicita_iva == "Mensile":
+            st.write("Costo per singola liquidazione mensile: €48")
             num_liquidazioni = 12
+            costo_liquidazioni = 48 * num_liquidazioni
         else:
+            st.write("Costo per singola liquidazione trimestrale: €70")
             num_liquidazioni = 4
-        costo_liquidazioni = 48 * num_liquidazioni
+            costo_liquidazioni = 70 * num_liquidazioni
         st.write(f"Costo stimato per 12 mesi: €{costo_liquidazioni:.2f} ({num_liquidazioni} liquidazioni)")
     else:
         costo_liquidazioni = 0
 
-    # Comunicazione dati IVA
-    st.write("Redazione e invio telematico comunicazione dati IVA:")
-    st.write("Costo per singola comunicazione: €48")
-    include_comunicazione_iva = st.checkbox("Includere comunicazione dati IVA?")
+    # Comunicazione dati IVA (LIPE)
+    st.write("Redazione e invio telematico comunicazione dati IVA (LIPE):")
+    st.write("Costo per singola comunicazione: da €48 a €125")
+    include_comunicazione_iva = st.checkbox("Includere comunicazione dati IVA (LIPE)?")
     if include_comunicazione_iva:
-        costo_comunicazione_iva = 48 * 4
-        st.write(f"Costo stimato per 12 mesi: €{costo_comunicazione_iva:.2f} (4 comunicazioni)")
+        num_comunicazioni = 4  # Di solito sono 4 comunicazioni all'anno
+        costo_min_comunicazione = 48
+        costo_max_comunicazione = 125
+        costo_comunicazione_iva = st.slider(
+            "Costo per singola comunicazione LIPE",
+            min_value=float(costo_min_comunicazione),
+            max_value=float(costo_max_comunicazione),
+            value=float(costo_min_comunicazione),
+            step=1.0
+        )
+        costo_totale_comunicazioni = costo_comunicazione_iva * num_comunicazioni
+        st.write(f"Costo stimato per 12 mesi: €{costo_totale_comunicazioni:.2f} ({num_comunicazioni} comunicazioni)")
     else:
-        costo_comunicazione_iva = 0
+        costo_totale_comunicazioni = 0
 
     # Modello IVA TR
     st.write("Modello IVA TR:")
@@ -162,7 +174,7 @@ def calcola_preventivo_semplificato():
     # Dichiarazione dei redditi
     st.write("Dichiarazione dei redditi:")
     tipo_impresa = st.radio("Tipo di impresa", ["Impresa individuale", "Società"])
-    
+
     fasce_redditi = {
         "Fino a 75.000,00 Euro": (292, 587),
         "da 75.001,00 a 150.000,00 Euro": (526, 791),
@@ -172,7 +184,7 @@ def calcola_preventivo_semplificato():
         "oltre 750.000,00": (1315, 1976)
     }
     st.table(pd.DataFrame(fasce_redditi, index=["Minimo", "Massimo"]).T)
-    
+
     include_dichiarazione_redditi = st.checkbox("Includere Dichiarazione dei redditi?")
     if include_dichiarazione_redditi:
         fascia_redditi = st.selectbox("Seleziona la fascia di reddito", list(fasce_redditi.keys()))
@@ -184,7 +196,18 @@ def calcola_preventivo_semplificato():
         else:  # Società
             num_soci = st.number_input("Numero di soci", min_value=1, value=1, step=1)
             costo_dichiarazione_redditi_societa = st.slider("Costo Dichiarazione dei redditi società", min_value=float(min_redditi), max_value=float(max_redditi), value=float(min_redditi), step=1.0)
-            costo_dichiarazione_redditi_soci = st.slider("Costo Dichiarazione dei redditi per socio", min_value=float(min_redditi), max_value=float(max_redditi), value=float(min_redditi), step=1.0)
+            
+            # Modifica per la dichiarazione dei redditi dei soci
+            costo_minimo_dichiarazione_socio = 292  # Valore minimo per la dichiarazione del socio
+            costo_dichiarazione_redditi_soci = st.slider(
+                "Costo Dichiarazione dei redditi per socio",
+                min_value=float(costo_minimo_dichiarazione_socio),
+                max_value=float(costo_minimo_dichiarazione_socio * 3),  # Triplicare il valore minimo come massimo
+                value=float(costo_minimo_dichiarazione_socio),
+                step=1.0
+            )
+            st.info("Nota: Il costo della dichiarazione dei redditi per socio è una scelta dell'utente e non è legato al fatturato della società.")
+            
             costo_dichiarazione_redditi = costo_dichiarazione_redditi_societa + (costo_dichiarazione_redditi_soci * num_soci)
             st.write(f"Costo Dichiarazione dei redditi società: €{costo_dichiarazione_redditi_societa:.2f}")
             st.write(f"Costo Dichiarazione dei redditi soci (x{num_soci}): €{costo_dichiarazione_redditi_soci * num_soci:.2f}")
@@ -204,7 +227,7 @@ def calcola_preventivo_semplificato():
         costo_situazioni = 0
 
     # Calcolo del totale
-    totale = (onorario_annuale + costo_liquidazioni + costo_comunicazione_iva + 
+    totale = (onorario_annuale + costo_liquidazioni + costo_totale_comunicazioni + 
               costo_modello_iva_tr + costo_dichiarazione_iva + costo_dichiarazione_redditi +
               costo_situazioni)
 
@@ -214,7 +237,7 @@ def calcola_preventivo_semplificato():
     if include_liquidazioni_iva:
         st.write(f"Liquidazioni IVA: €{costo_liquidazioni:.2f}")
     if include_comunicazione_iva:
-        st.write(f"Comunicazione dati IVA: €{costo_comunicazione_iva:.2f}")
+        st.write(f"Comunicazione dati IVA (LIPE): €{costo_totale_comunicazioni:.2f}")
     if include_modello_iva_tr:
         st.write(f"Modello IVA TR: €{costo_modello_iva_tr:.2f}")
     if include_dichiarazione_iva:
@@ -233,8 +256,11 @@ def calcola_preventivo_semplificato():
     # Modifica manuale dei valori
     st.subheader("Modifica manuale dei valori")
     onorario_annuale_manuale = st.number_input("Onorario annuale", value=float(onorario_annuale), step=10.0)
-    costo_liquidazioni_manuale = st.number_input("Costo liquidazioni IVA", value=float(costo_liquidazioni), step=1.0)
-    costo_comunicazione_iva_manuale = st.number_input("Costo Comunicazione dati IVA", value=float(costo_comunicazione_iva), step=1.0)
+    costo_liquidazioni_manuale = st.number_input("Costo liquidazioni IVA", 
+                                                 value=float(costo_liquidazioni), 
+                                                 step=1.0, 
+                                                 help="48€ per liquidazione mensile, 70€ per liquidazione trimestrale")
+    costo_comunicazione_iva_manuale = st.number_input("Costo Comunicazione dati IVA (LIPE)", value=float(costo_totale_comunicazioni), step=1.0)
     costo_modello_iva_tr_manuale = st.number_input("Costo Modello IVA TR", value=float(costo_modello_iva_tr), step=1.0)
     costo_dichiarazione_iva_manuale = st.number_input("Costo Dichiarazione IVA", value=float(costo_dichiarazione_iva), step=1.0)
     if tipo_impresa == "Impresa individuale":
@@ -255,7 +281,7 @@ def calcola_preventivo_semplificato():
         "Servizi Aggiuntivi": {
             "Onorario annuale": onorario_annuale_manuale,
             "Liquidazioni IVA": costo_liquidazioni_manuale,
-            "Comunicazione dati IVA": costo_comunicazione_iva_manuale,
+            "Comunicazione dati IVA (LIPE)": costo_comunicazione_iva_manuale,
             "Modello IVA TR": costo_modello_iva_tr_manuale,
             "Dichiarazione IVA": costo_dichiarazione_iva_manuale,
             "Dichiarazione dei redditi": costo_dichiarazione_redditi_manuale,
@@ -302,7 +328,6 @@ def calcola_preventivo_ordinario():
     
     # Liquidazioni IVA
     st.write("Liquidazioni IVA:")
-    st.write("Costo per singola liquidazione: €48")
     include_liquidazioni_iva = st.checkbox("Includere liquidazioni IVA?")
     if include_liquidazioni_iva:
         periodicita_iva = st.radio("Periodicità IVA", ["Mensile", "Trimestrale"])
@@ -315,15 +340,25 @@ def calcola_preventivo_ordinario():
     else:
         costo_liquidazioni = 0
 
-    # Comunicazione dati IVA
-    st.write("Redazione e invio telematico comunicazione dati IVA:")
-    st.write("Costo per singola comunicazione: €48")
-    include_comunicazione_iva = st.checkbox("Includere comunicazione dati IVA?")
+    # Comunicazione dati IVA (LIPE)
+    st.write("Redazione e invio telematico comunicazione dati IVA (LIPE):")
+    st.write("Costo per singola comunicazione: da €48 a €125")
+    include_comunicazione_iva = st.checkbox("Includere comunicazione dati IVA (LIPE)?")
     if include_comunicazione_iva:
-        costo_comunicazione_iva = 48 * 4
-        st.write(f"Costo stimato per 12 mesi: €{costo_comunicazione_iva:.2f} (4 comunicazioni)")
+        num_comunicazioni = 4  # Di solito sono 4 comunicazioni all'anno
+        costo_min_comunicazione = 48
+        costo_max_comunicazione = 125
+        costo_comunicazione_iva = st.slider(
+            "Costo per singola comunicazione LIPE",
+            min_value=float(costo_min_comunicazione),
+            max_value=float(costo_max_comunicazione),
+            value=float(costo_min_comunicazione),
+            step=1.0
+        )
+        costo_totale_comunicazioni = costo_comunicazione_iva * num_comunicazioni
+        st.write(f"Costo stimato per 12 mesi: €{costo_totale_comunicazioni:.2f} ({num_comunicazioni} comunicazioni)")
     else:
-        costo_comunicazione_iva = 0
+        costo_totale_comunicazioni = 0
 
     # Modello IVA TR
     st.write("Modello IVA TR:")
@@ -456,7 +491,7 @@ def calcola_preventivo_ordinario():
         costo_situazioni = 0
 
     # Calcolo del totale
-    totale = (onorario_base + costo_liquidazioni + costo_comunicazione_iva + 
+    totale = (onorario_base + costo_liquidazioni + costo_totale_comunicazioni + 
               costo_modello_iva_tr + costo_dichiarazione_iva + costo_dichiarazione_redditi + 
               costo_bilancio + costo_componenti_positivi + costo_situazioni + sum(altri_servizi.values()))
 
@@ -466,7 +501,7 @@ def calcola_preventivo_ordinario():
     if include_liquidazioni_iva:
         st.write(f"Liquidazioni IVA: €{costo_liquidazioni:.2f}")
     if include_comunicazione_iva:
-        st.write(f"Comunicazione dati IVA: €{costo_comunicazione_iva:.2f}")
+        st.write(f"Comunicazione dati IVA (LIPE): €{costo_totale_comunicazioni:.2f}")
     if include_modello_iva_tr:
         st.write(f"Modello IVA TR: €{costo_modello_iva_tr:.2f}")
     if include_dichiarazione_iva:
@@ -487,8 +522,11 @@ def calcola_preventivo_ordinario():
     # Modifica manuale dei valori
     st.subheader("Modifica manuale dei valori")
     onorario_base_manuale = st.number_input("Onorario base", value=float(onorario_base), step=10.0)
-    costo_liquidazioni_manuale = st.number_input("Costo liquidazioni IVA", value=float(costo_liquidazioni), step=1.0)
-    costo_comunicazione_iva_manuale = st.number_input("Costo Comunicazione dati IVA", value=float(costo_comunicazione_iva), step=1.0)
+    costo_liquidazioni_manuale = st.number_input("Costo liquidazioni IVA", 
+                                                 value=float(costo_liquidazioni), 
+                                                 step=1.0, 
+                                                 help="48€ per liquidazione mensile, 70€ per liquidazione trimestrale")
+    costo_comunicazione_iva_manuale = st.number_input("Costo Comunicazione dati IVA (LIPE)", value=float(costo_totale_comunicazioni), step=1.0)
     costo_modello_iva_tr_manuale = st.number_input("Costo Modello IVA TR", value=float(costo_modello_iva_tr), step=1.0)
     costo_dichiarazione_iva_manuale = st.number_input("Costo Dichiarazione IVA", value=float(costo_dichiarazione_iva), step=1.0)
     costo_dichiarazione_redditi_manuale = st.number_input("Costo Dichiarazione dei redditi", value=float(costo_dichiarazione_redditi), step=1.0)
@@ -506,7 +544,7 @@ def calcola_preventivo_ordinario():
         "Servizi Aggiuntivi": {
             "Onorario base": onorario_base_manuale,
             "Liquidazioni IVA": costo_liquidazioni_manuale,
-            "Comunicazione dati IVA": costo_comunicazione_iva_manuale,
+            "Comunicazione dati IVA (LIPE)": costo_comunicazione_iva_manuale,
             "Modello IVA TR": costo_modello_iva_tr_manuale,
             "Dichiarazione IVA": costo_dichiarazione_iva_manuale,
             "Dichiarazione dei redditi": costo_dichiarazione_redditi_manuale,
