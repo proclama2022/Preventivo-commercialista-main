@@ -101,22 +101,42 @@ def calcola_preventivo_semplificato():
                                  value=float(onorario_min),
                                  format="€%.2f")
 
-    # Servizi aggiuntivi
-    st.subheader("Servizi Aggiuntivi")
+    # Liquidazioni IVA e comunicazioni
+    st.subheader("Liquidazioni IVA e comunicazioni")
     
     # Liquidazioni IVA
     st.write("Liquidazioni IVA:")
-    st.write("Costo per liquidazione: €48")
+    st.write("Costo per singola liquidazione: €48")
     include_liquidazioni_iva = st.checkbox("Includere liquidazioni IVA?")
     if include_liquidazioni_iva:
         periodicita_iva = st.radio("Periodicità IVA", ["Mensile", "Trimestrale"])
         if periodicita_iva == "Mensile":
-            costo_liquidazioni = 48 * 12
+            num_liquidazioni = 12
         else:
-            costo_liquidazioni = 48 * 4
-        st.write(f"Costo totale liquidazioni IVA: €{costo_liquidazioni:.2f}")
+            num_liquidazioni = 4
+        costo_liquidazioni = 48 * num_liquidazioni
+        st.write(f"Costo stimato per 12 mesi: €{costo_liquidazioni:.2f} ({num_liquidazioni} liquidazioni)")
     else:
         costo_liquidazioni = 0
+
+    # Comunicazione dati IVA
+    st.write("Redazione e invio telematico comunicazione dati IVA:")
+    st.write("Costo per singola comunicazione: €48")
+    include_comunicazione_iva = st.checkbox("Includere comunicazione dati IVA?")
+    if include_comunicazione_iva:
+        costo_comunicazione_iva = 48 * 4
+        st.write(f"Costo stimato per 12 mesi: €{costo_comunicazione_iva:.2f} (4 comunicazioni)")
+    else:
+        costo_comunicazione_iva = 0
+
+    # Modello IVA TR
+    st.write("Modello IVA TR:")
+    include_modello_iva_tr = st.checkbox("Includere Modello IVA TR?")
+    if include_modello_iva_tr:
+        costo_modello_iva_tr = st.slider("Costo Modello IVA TR", min_value=48.0, max_value=96.0, value=48.0, step=1.0)
+        st.write(f"Costo Modello IVA TR: €{costo_modello_iva_tr:.2f}")
+    else:
+        costo_modello_iva_tr = 0
 
     # Dichiarazione IVA
     st.write("Dichiarazione IVA:")
@@ -141,6 +161,8 @@ def calcola_preventivo_semplificato():
 
     # Dichiarazione dei redditi
     st.write("Dichiarazione dei redditi:")
+    tipo_impresa = st.radio("Tipo di impresa", ["Impresa individuale", "Società"])
+    
     fasce_redditi = {
         "Fino a 75.000,00 Euro": (292, 587),
         "da 75.001,00 a 150.000,00 Euro": (526, 791),
@@ -155,33 +177,77 @@ def calcola_preventivo_semplificato():
     if include_dichiarazione_redditi:
         fascia_redditi = st.selectbox("Seleziona la fascia di reddito", list(fasce_redditi.keys()))
         min_redditi, max_redditi = fasce_redditi[fascia_redditi]
-        costo_dichiarazione_redditi = st.slider("Costo Dichiarazione dei redditi", min_value=float(min_redditi), max_value=float(max_redditi), value=float(min_redditi), step=1.0)
-        st.write(f"Costo Dichiarazione dei redditi: €{costo_dichiarazione_redditi:.2f}")
+        
+        if tipo_impresa == "Impresa individuale":
+            costo_dichiarazione_redditi = st.slider("Costo Dichiarazione dei redditi", min_value=float(min_redditi), max_value=float(max_redditi), value=float(min_redditi), step=1.0)
+            st.write(f"Costo Dichiarazione dei redditi: €{costo_dichiarazione_redditi:.2f}")
+        else:  # Società
+            num_soci = st.number_input("Numero di soci", min_value=1, value=1, step=1)
+            costo_dichiarazione_redditi_societa = st.slider("Costo Dichiarazione dei redditi società", min_value=float(min_redditi), max_value=float(max_redditi), value=float(min_redditi), step=1.0)
+            costo_dichiarazione_redditi_soci = st.slider("Costo Dichiarazione dei redditi per socio", min_value=float(min_redditi), max_value=float(max_redditi), value=float(min_redditi), step=1.0)
+            costo_dichiarazione_redditi = costo_dichiarazione_redditi_societa + (costo_dichiarazione_redditi_soci * num_soci)
+            st.write(f"Costo Dichiarazione dei redditi società: €{costo_dichiarazione_redditi_societa:.2f}")
+            st.write(f"Costo Dichiarazione dei redditi soci (x{num_soci}): €{costo_dichiarazione_redditi_soci * num_soci:.2f}")
+            st.write(f"Costo totale Dichiarazioni dei redditi: €{costo_dichiarazione_redditi:.2f}")
     else:
         costo_dichiarazione_redditi = 0
 
+    # Situazioni patrimoniali periodiche
+    st.write("Predisposizione di situazioni patrimoniali periodiche:")
+    st.write("Costo minimo per situazione: €110")
+    include_situazioni_periodiche = st.checkbox("Includere situazioni patrimoniali periodiche?")
+    if include_situazioni_periodiche:
+        num_situazioni = st.number_input("Numero di situazioni patrimoniali da redigere", min_value=1, max_value=12, value=1, step=1)
+        costo_situazioni = 110 * num_situazioni
+        st.write(f"Costo totale per {num_situazioni} situazioni patrimoniali: €{costo_situazioni:.2f}")
+    else:
+        costo_situazioni = 0
+
     # Calcolo del totale
-    totale = onorario_annuale + costo_liquidazioni + costo_dichiarazione_iva + costo_dichiarazione_redditi
+    totale = (onorario_annuale + costo_liquidazioni + costo_comunicazione_iva + 
+              costo_modello_iva_tr + costo_dichiarazione_iva + costo_dichiarazione_redditi +
+              costo_situazioni)
 
     # Riepilogo
     st.subheader("Riepilogo Preventivo")
     st.write(f"Onorario annuale contabilità: €{onorario_annuale:.2f}")
     if include_liquidazioni_iva:
         st.write(f"Liquidazioni IVA: €{costo_liquidazioni:.2f}")
+    if include_comunicazione_iva:
+        st.write(f"Comunicazione dati IVA: €{costo_comunicazione_iva:.2f}")
+    if include_modello_iva_tr:
+        st.write(f"Modello IVA TR: €{costo_modello_iva_tr:.2f}")
     if include_dichiarazione_iva:
         st.write(f"Dichiarazione IVA: €{costo_dichiarazione_iva:.2f}")
     if include_dichiarazione_redditi:
-        st.write(f"Dichiarazione dei redditi: €{costo_dichiarazione_redditi:.2f}")
+        if tipo_impresa == "Impresa individuale":
+            st.write(f"Dichiarazione dei redditi: €{costo_dichiarazione_redditi:.2f}")
+        else:
+            st.write(f"Dichiarazione dei redditi società: €{costo_dichiarazione_redditi_societa:.2f}")
+            st.write(f"Dichiarazione dei redditi soci (x{num_soci}): €{costo_dichiarazione_redditi_soci * num_soci:.2f}")
+            st.write(f"Totale Dichiarazioni dei redditi: €{costo_dichiarazione_redditi:.2f}")
+    if include_situazioni_periodiche:
+        st.write(f"Situazioni patrimoniali periodiche: €{costo_situazioni:.2f}")
     st.write(f"**Totale preventivo: €{totale:.2f}**")
 
     # Modifica manuale dei valori
     st.subheader("Modifica manuale dei valori")
     onorario_annuale_manuale = st.number_input("Onorario annuale", value=float(onorario_annuale), step=10.0)
     costo_liquidazioni_manuale = st.number_input("Costo liquidazioni IVA", value=float(costo_liquidazioni), step=1.0)
+    costo_comunicazione_iva_manuale = st.number_input("Costo Comunicazione dati IVA", value=float(costo_comunicazione_iva), step=1.0)
+    costo_modello_iva_tr_manuale = st.number_input("Costo Modello IVA TR", value=float(costo_modello_iva_tr), step=1.0)
     costo_dichiarazione_iva_manuale = st.number_input("Costo Dichiarazione IVA", value=float(costo_dichiarazione_iva), step=1.0)
-    costo_dichiarazione_redditi_manuale = st.number_input("Costo Dichiarazione dei redditi", value=float(costo_dichiarazione_redditi), step=1.0)
+    if tipo_impresa == "Impresa individuale":
+        costo_dichiarazione_redditi_manuale = st.number_input("Costo Dichiarazione dei redditi", value=float(costo_dichiarazione_redditi), step=1.0)
+    else:
+        costo_dichiarazione_redditi_societa_manuale = st.number_input("Costo Dichiarazione dei redditi società", value=float(costo_dichiarazione_redditi_societa), step=1.0)
+        costo_dichiarazione_redditi_soci_manuale = st.number_input("Costo Dichiarazione dei redditi soci (totale)", value=float(costo_dichiarazione_redditi_soci * num_soci), step=1.0)
+        costo_dichiarazione_redditi_manuale = costo_dichiarazione_redditi_societa_manuale + costo_dichiarazione_redditi_soci_manuale
+    costo_situazioni_manuale = st.number_input("Costo situazioni patrimoniali periodiche", value=float(costo_situazioni), step=1.0)
 
-    totale_manuale = onorario_annuale_manuale + costo_liquidazioni_manuale + costo_dichiarazione_iva_manuale + costo_dichiarazione_redditi_manuale
+    totale_manuale = (onorario_annuale_manuale + costo_liquidazioni_manuale + costo_comunicazione_iva_manuale + 
+                      costo_modello_iva_tr_manuale + costo_dichiarazione_iva_manuale + costo_dichiarazione_redditi_manuale +
+                      costo_situazioni_manuale)
     st.write(f"**Totale preventivo (modificato manualmente): €{totale_manuale:.2f}**")
 
     return {
@@ -189,8 +255,11 @@ def calcola_preventivo_semplificato():
         "Servizi Aggiuntivi": {
             "Onorario annuale": onorario_annuale_manuale,
             "Liquidazioni IVA": costo_liquidazioni_manuale,
+            "Comunicazione dati IVA": costo_comunicazione_iva_manuale,
+            "Modello IVA TR": costo_modello_iva_tr_manuale,
             "Dichiarazione IVA": costo_dichiarazione_iva_manuale,
-            "Dichiarazione dei redditi": costo_dichiarazione_redditi_manuale
+            "Dichiarazione dei redditi": costo_dichiarazione_redditi_manuale,
+            "Situazioni patrimoniali periodiche": costo_situazioni_manuale,
         }
     }
 
@@ -228,22 +297,42 @@ def calcola_preventivo_ordinario():
     onorario_base = st.slider("Seleziona l'onorario base", min_value=float(onorario_min), max_value=float(onorario_max), value=float(onorario_min), step=10.0)
     st.write(f"Onorario base selezionato: €{onorario_base:.2f}")
 
-    # Servizi aggiuntivi
-    st.subheader("Servizi Aggiuntivi")
+    # Liquidazioni IVA e comunicazioni
+    st.subheader("Liquidazioni IVA e comunicazioni")
     
     # Liquidazioni IVA
     st.write("Liquidazioni IVA:")
-    st.write("Costo per liquidazione: €48")
+    st.write("Costo per singola liquidazione: €48")
     include_liquidazioni_iva = st.checkbox("Includere liquidazioni IVA?")
     if include_liquidazioni_iva:
         periodicita_iva = st.radio("Periodicità IVA", ["Mensile", "Trimestrale"])
         if periodicita_iva == "Mensile":
-            costo_liquidazioni = 48 * 12
+            num_liquidazioni = 12
         else:
-            costo_liquidazioni = 48 * 4
-        st.write(f"Costo totale liquidazioni IVA: €{costo_liquidazioni:.2f}")
+            num_liquidazioni = 4
+        costo_liquidazioni = 48 * num_liquidazioni
+        st.write(f"Costo stimato per 12 mesi: €{costo_liquidazioni:.2f} ({num_liquidazioni} liquidazioni)")
     else:
         costo_liquidazioni = 0
+
+    # Comunicazione dati IVA
+    st.write("Redazione e invio telematico comunicazione dati IVA:")
+    st.write("Costo per singola comunicazione: €48")
+    include_comunicazione_iva = st.checkbox("Includere comunicazione dati IVA?")
+    if include_comunicazione_iva:
+        costo_comunicazione_iva = 48 * 4
+        st.write(f"Costo stimato per 12 mesi: €{costo_comunicazione_iva:.2f} (4 comunicazioni)")
+    else:
+        costo_comunicazione_iva = 0
+
+    # Modello IVA TR
+    st.write("Modello IVA TR:")
+    include_modello_iva_tr = st.checkbox("Includere Modello IVA TR?")
+    if include_modello_iva_tr:
+        costo_modello_iva_tr = st.slider("Costo Modello IVA TR", min_value=48.0, max_value=96.0, value=48.0, step=1.0)
+        st.write(f"Costo Modello IVA TR: €{costo_modello_iva_tr:.2f}")
+    else:
+        costo_modello_iva_tr = 0
 
     # Dichiarazione IVA
     st.write("Dichiarazione IVA:")
@@ -355,16 +444,31 @@ def calcola_preventivo_ordinario():
         else:
             altri_servizi[servizio] = 0
 
+    # Situazioni patrimoniali periodiche
+    st.write("Predisposizione di situazioni patrimoniali periodiche:")
+    st.write("Costo minimo per situazione: €110")
+    include_situazioni_periodiche = st.checkbox("Includere situazioni patrimoniali periodiche?")
+    if include_situazioni_periodiche:
+        num_situazioni = st.number_input("Numero di situazioni patrimoniali da redigere", min_value=1, max_value=12, value=1, step=1)
+        costo_situazioni = 110 * num_situazioni
+        st.write(f"Costo totale per {num_situazioni} situazioni patrimoniali: €{costo_situazioni:.2f}")
+    else:
+        costo_situazioni = 0
+
     # Calcolo del totale
-    totale = (onorario_base + costo_liquidazioni + costo_dichiarazione_iva + 
-              costo_dichiarazione_redditi + costo_bilancio + costo_componenti_positivi +
-              sum(altri_servizi.values()))
+    totale = (onorario_base + costo_liquidazioni + costo_comunicazione_iva + 
+              costo_modello_iva_tr + costo_dichiarazione_iva + costo_dichiarazione_redditi + 
+              costo_bilancio + costo_componenti_positivi + costo_situazioni + sum(altri_servizi.values()))
 
     # Riepilogo
     st.subheader("Riepilogo Preventivo")
     st.write(f"Onorario base: €{onorario_base:.2f}")
     if include_liquidazioni_iva:
         st.write(f"Liquidazioni IVA: €{costo_liquidazioni:.2f}")
+    if include_comunicazione_iva:
+        st.write(f"Comunicazione dati IVA: €{costo_comunicazione_iva:.2f}")
+    if include_modello_iva_tr:
+        st.write(f"Modello IVA TR: €{costo_modello_iva_tr:.2f}")
     if include_dichiarazione_iva:
         st.write(f"Dichiarazione IVA: €{costo_dichiarazione_iva:.2f}")
     if include_dichiarazione_redditi:
@@ -376,21 +480,25 @@ def calcola_preventivo_ordinario():
     for servizio, costo in altri_servizi.items():
         if costo > 0:
             st.write(f"{servizio}: €{costo:.2f}")
+    if include_situazioni_periodiche:
+        st.write(f"Situazioni patrimoniali periodiche: €{costo_situazioni:.2f}")
     st.write(f"**Totale preventivo: €{totale:.2f}**")
 
     # Modifica manuale dei valori
     st.subheader("Modifica manuale dei valori")
     onorario_base_manuale = st.number_input("Onorario base", value=float(onorario_base), step=10.0)
     costo_liquidazioni_manuale = st.number_input("Costo liquidazioni IVA", value=float(costo_liquidazioni), step=1.0)
+    costo_comunicazione_iva_manuale = st.number_input("Costo Comunicazione dati IVA", value=float(costo_comunicazione_iva), step=1.0)
+    costo_modello_iva_tr_manuale = st.number_input("Costo Modello IVA TR", value=float(costo_modello_iva_tr), step=1.0)
     costo_dichiarazione_iva_manuale = st.number_input("Costo Dichiarazione IVA", value=float(costo_dichiarazione_iva), step=1.0)
     costo_dichiarazione_redditi_manuale = st.number_input("Costo Dichiarazione dei redditi", value=float(costo_dichiarazione_redditi), step=1.0)
     costo_bilancio_manuale = st.number_input("Costo Bilancio", value=float(costo_bilancio), step=1.0)
     costo_componenti_positivi_manuale = st.number_input("Costo calcolo componenti positivi", value=float(costo_componenti_positivi), step=1.0)
+    costo_situazioni_manuale = st.number_input("Costo situazioni patrimoniali periodiche", value=float(costo_situazioni), step=1.0)
 
-    totale_manuale = (onorario_base_manuale + costo_liquidazioni_manuale + 
-                      costo_dichiarazione_iva_manuale + costo_dichiarazione_redditi_manuale + 
-                      costo_bilancio_manuale + costo_componenti_positivi_manuale +
-                      sum(altri_servizi.values()))
+    totale_manuale = (onorario_base_manuale + costo_liquidazioni_manuale + costo_comunicazione_iva_manuale + 
+                      costo_modello_iva_tr_manuale + costo_dichiarazione_iva_manuale + costo_dichiarazione_redditi_manuale + 
+                      costo_bilancio_manuale + costo_componenti_positivi_manuale + costo_situazioni_manuale + sum(altri_servizi.values()))
     st.write(f"**Totale preventivo (modificato manualmente): €{totale_manuale:.2f}**")
 
     return {
@@ -398,10 +506,13 @@ def calcola_preventivo_ordinario():
         "Servizi Aggiuntivi": {
             "Onorario base": onorario_base_manuale,
             "Liquidazioni IVA": costo_liquidazioni_manuale,
+            "Comunicazione dati IVA": costo_comunicazione_iva_manuale,
+            "Modello IVA TR": costo_modello_iva_tr_manuale,
             "Dichiarazione IVA": costo_dichiarazione_iva_manuale,
             "Dichiarazione dei redditi": costo_dichiarazione_redditi_manuale,
             "Bilancio": costo_bilancio_manuale,
             "Calcolo componenti positivi": costo_componenti_positivi_manuale,
+            "Situazioni patrimoniali periodiche": costo_situazioni_manuale,
             **{k: v for k, v in altri_servizi.items() if v > 0}
         }
     }
